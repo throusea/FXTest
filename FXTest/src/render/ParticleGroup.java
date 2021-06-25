@@ -4,13 +4,14 @@ import javafx.animation.ParallelTransition;
 import javafx.animation.SequentialTransition;
 import javafx.animation.Transition;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import render.system.DSystem;
 
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ParticleGroup implements Runnable, ParticleListener {
+public class ParticleGroup implements ParticleListener {
     static private final int PARALLEL_MODE = 1, SEQUENTIAL_MODE = 2;
 
     private List<Particle> particles = new ArrayList<>();
@@ -37,7 +38,7 @@ public class ParticleGroup implements Runnable, ParticleListener {
         particles.forEach(particle -> particle.setRemainingTime(time));
     }
 
-    public void addParticle(Particle particle) { particles.add(particle); }
+    public void addParticle(Particle particle) { particles.add(particle); particle.register(this); }
 
     public void addSystem(DSystem system) {
         systemList.add(system);
@@ -60,9 +61,15 @@ public class ParticleGroup implements Runnable, ParticleListener {
         return true;
     }
 
+    public void setParticleColor(Color color) {
+        particles.forEach(particle -> particle.setStroke(color));
+    }
+
     public void setParticlePosition(Point point) {
         particles.forEach(particle -> particle.setInitPosition(point));
     }
+
+    public void setOpacityMode(int opacityMode) { particles.forEach(particle -> particle.setOpacityMode(Particle.SUDDEN));}
 
     public void setTransition(int transitionModule) {
         this.transitionModule = transitionModule;
@@ -98,7 +105,6 @@ public class ParticleGroup implements Runnable, ParticleListener {
 
     public void play() { transition.play(); }
 
-    @Override
     public void run() {
         systemList.forEach(listener -> addEffect(listener));
         arrayList.forEach(listener -> addParent(listener));

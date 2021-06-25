@@ -12,19 +12,21 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import render.Particle;
 import render.ParticleGroup;
 import render.Vector2d;
 import render.system.GravitySystem;
 import render.system.HitSystem;
 
+import java.awt.*;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.ResourceBundle;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
+
+import static render.Particle.DIMINISH;
+import static render.Particle.SUDDEN;
 
 public class Controller implements Initializable {
 
@@ -54,6 +56,31 @@ public class Controller implements Initializable {
         group0.addGroup(group, 2);
         group0.play();
         //TODO: st.getChildren().add();
+    }
+
+    public void showFireworks(MouseEvent event) {
+        double maxW = pane.getWidth(), maxH = pane.getHeight();
+        Random random = new Random();
+        ParticleGroup tGroup = new ParticleGroup(0, pane);
+        tGroup.run();
+        int time = 10;
+        while(time-- > 0) {
+            int x = random.nextInt((int)maxW);
+            int y = random.nextInt((int)maxH);
+            ParticleGroup group = new ParticleGroup(0, pane);
+            group.addParticle(new Particle(new Vector2d(x,y + 200),new Vector2d(x,y), 20,DIMINISH));
+            group.setParticleColor(Color.YELLOW);
+            group.setOpacityMode(SUDDEN);
+            group.run();
+            ParticleGroup group1 = new ParticleGroup(50, pane);
+            group1.addSystem(new GravitySystem());
+            group1.setParticleColor(Color.YELLOW);
+            group1.setParticlePosition(new Point(x,y));
+            group1.run();
+            group.addGroup(group1, 2);
+            tGroup.addGroup(group, 2);
+        }
+        tGroup.play();
     }
 
     public void showDateTime(MouseEvent event) {

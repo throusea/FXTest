@@ -13,7 +13,9 @@ import java.util.Random;
 
 public class Particle extends Circle implements Runnable {
 
-    static int RANDOM = 1;
+    public static final int RANDOM = 1, NORMAL = 2, DIMINISH = 3;
+
+    public static final int SUDDEN = 4;
 
     private Random random = new Random();
 
@@ -30,6 +32,8 @@ public class Particle extends Circle implements Runnable {
     private Point position;
 
     private Timeline timeline;
+
+    private int actionMode = NORMAL, opacityMode = DIMINISH;
 
     //private boolean
 
@@ -50,14 +54,12 @@ public class Particle extends Circle implements Runnable {
         super();
         if(Module == RANDOM) {
             this.position = new Point(0,0);
-            this.remainingTime = 50;
+            this.remainingTime = 20;
             a = new Vector2d(0,0);
             double r = random.nextDouble() * 200 - 100;
             double d = random.nextDouble() * 2 * Math.PI;
             v = new Vector2d(r * Math.cos(d),r * Math.sin(d));
             s = new Vector2d(position);
-            setCenterX(position.x);
-            setCenterY(position.y);
             setRadius(2);
             setOpacity(0);
         }
@@ -69,6 +71,16 @@ public class Particle extends Circle implements Runnable {
         this.v = v;
         this.s = s;
         this.position = new Point((int)s.x, (int)s.y);
+        setRadius(2);
+        setOpacity(0);
+    }
+
+    public Particle(Vector2d initS, Vector2d destS, int t, int mode) {
+        super();
+        position = initS.getPoint();
+        s = destS;
+        remainingTime = t;
+        this.actionMode = mode;
         setRadius(2);
         setOpacity(0);
     }
@@ -101,22 +113,31 @@ public class Particle extends Circle implements Runnable {
     }
 
     private void setFrame() {
-        Vector2d dv = new Vector2d(), dx = new Vector2d();
-        int t = remainingTime;
-        while(t-- >= 0) {
-            int t0 = remainingTime - t;
-            dv.set(a.multiple(0.1f));
-            v.add(dv);
-            dx.set(v.multiple(0.1f));
-            s.add(dx);
+        if(actionMode == NORMAL) {
+            Vector2d dv = new Vector2d(), dx = new Vector2d();
+            int t = remainingTime;
+            while (t-- >= 0) {
+                int t0 = remainingTime - t;
+                dv.set(a.multiple(0.1f));
+                v.add(dv);
+                dx.set(v.multiple(0.1f));
+                s.add(dx);
+                position.setLocation(s.getPoint());
+                drawPath(t0 * 100);
+            }
+        }else if(actionMode == DIMINISH) {
             position.setLocation(s.getPoint());
-            arrayList.forEach(listener -> drawPath(listener, t0 * 100));
+            drawPath(remainingTime * 100);
         }
     }
 
     public void setEndFrame() {
-        addKeyFrame(timeline.getTotalDuration(), new KeyValue(this.opacityProperty(), 1));
+        if(opacityMode == SUDDEN) addKeyFrame(timeline.getTotalDuration(), new KeyValue(this.opacityProperty(), 1));
         addKeyFrame(timeline.getTotalDuration().add(new Duration(1)), new KeyValue(this.opacityProperty(), 0));
+    }
+
+    public void setOpacityMode(int opacityMode) {
+        this.opacityMode = opacityMode;
     }
 
     public void addListener(Object o) {
@@ -126,12 +147,10 @@ public class Particle extends Circle implements Runnable {
         }
     }
 
-    public void drawPath(Object o, int millis) {
-        if(o instanceof Pane) {
-            KeyValue keyValueX = new KeyValue(this.translateXProperty(), position.x);
-            KeyValue keyValueY = new KeyValue(this.translateYProperty(), position.y);
-            addKeyFrame(millis, keyValueX, keyValueY);
-        }
+    public void drawPath(int millis) {
+        KeyValue keyValueX = new KeyValue(this.translateXProperty(), position.x);
+        KeyValue keyValueY = new KeyValue(this.translateYProperty(), position.y);
+        addKeyFrame(millis, keyValueX, keyValueY);
     }
 
     private void addKeyFrame(int millis, KeyValue keyValue) {
@@ -158,6 +177,7 @@ public class Particle extends Circle implements Runnable {
     public void run() {
         timeline = new Timeline();
         setInitFrame(position.x, position.y);
+        System.out.printf("%d %d\n",position.x, position.y);
         setFrame();
         setEndFrame();
     }
